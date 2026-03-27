@@ -14,7 +14,7 @@ function MainAppContent() {
   const [members, setMembers] = useState<{ name: string; usn: string }[]>([]);
   const [progress, setProgress] = useState(0);
   const [route, setRoute] = useState("");
-  const [targetClue, setTargetClue] = useState<{ clueText: string; resourceUrl: string | null } | null>(null);
+  const [targetClue, setTargetClue] = useState<{ clueText: string } | null>(null);
   
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState("");
@@ -28,6 +28,7 @@ function MainAppContent() {
   const [finalTimeText, setFinalTimeText] = useState("N/A");
   const [wasStoppedByAdmin, setWasStoppedByAdmin] = useState(false);
   const [solvedCount, setSolvedCount] = useState(0);
+  const [broadcastMessage, setBroadcastMessage] = useState("");
   const [showRules, setShowRules] = useState(false);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ function MainAppContent() {
         setFinalTimeText(localStorage.getItem("totalTimeText") || "N/A");
       }
       setWasStoppedByAdmin(localStorage.getItem("wasStoppedByAdmin") === "1");
+      setBroadcastMessage(localStorage.getItem("broadcastMessage") || "");
       try {
         setMembers(JSON.parse(localStorage.getItem("members") || "[]"));
       } catch { /* ignore parse errors */ }
@@ -88,6 +90,10 @@ function MainAppContent() {
           setFinalTimeText(data.totalTimeText);
           localStorage.setItem("totalTimeText", data.totalTimeText);
         }
+
+        const latestBroadcast = data.broadcastMessage ?? "";
+        setBroadcastMessage(latestBroadcast);
+        localStorage.setItem("broadcastMessage", latestBroadcast);
 
         setWasStoppedByAdmin(!!data.wasStoppedByAdmin);
         localStorage.setItem("wasStoppedByAdmin", data.wasStoppedByAdmin ? "1" : "0");
@@ -136,7 +142,7 @@ function MainAppContent() {
             const res = await fetch(`/api/targetclue?location=${encodeURIComponent(currentLocation)}`);
             const data = await res.json();
             if (data.success) {
-              setTargetClue({ clueText: data.clueText, resourceUrl: data.resourceUrl });
+              setTargetClue({ clueText: data.clueText });
             }
           } catch (err) {
             console.error("Failed to fetch target clue:", err);
@@ -271,6 +277,9 @@ function MainAppContent() {
            </svg>
         </div>
         <h1 className="text-4xl font-bold text-[#D4AF37] uppercase tracking-[0.3em] mb-4 z-10">Quest Complete</h1>
+        {broadcastMessage && (
+          <p className="text-yellow-300 text-xs uppercase tracking-widest mb-4 z-10">Admin Message: {broadcastMessage}</p>
+        )}
         {wasStoppedByAdmin ? (
           <>
             <p className="text-gray-300 tracking-wide text-sm mb-2 z-10">
@@ -301,6 +310,13 @@ function MainAppContent() {
       <div className="absolute inset-0 bg-[#0a0a0a] bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.08)_0,rgba(0,0,0,1)_70%)] opacity-70" />
 
       <div className="w-full max-w-lg text-center z-10">
+
+        {broadcastMessage && (
+          <div className="mb-5 border border-yellow-500/60 bg-yellow-950/20 px-4 py-3">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-yellow-400 mb-2">Admin Broadcast</p>
+            <p className="text-sm text-yellow-200 leading-relaxed">{broadcastMessage}</p>
+          </div>
+        )}
 
         {/* Rules Info Button */}
         <button
@@ -420,16 +436,6 @@ function MainAppContent() {
                   <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
                     {targetClue.clueText}
                   </p>
-                  {targetClue.resourceUrl && (
-                    <a 
-                      href={targetClue.resourceUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-block text-[#D4AF37] text-sm underline hover:text-yellow-300 transition-colors"
-                    >
-                      📎 {targetClue.resourceUrl}
-                    </a>
-                  )}
                 </div>
               )}
               <p className="text-gray-500 text-xs mt-6 tracking-widest uppercase animate-pulse">

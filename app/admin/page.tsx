@@ -7,6 +7,8 @@ export default function AdminDashboard() {
   const [authed, setAuthed] = useState(false);
   const [teams, setTeams] = useState<Record<string, any>>({});
   const [stageTimes, setStageTimes] = useState<Array<{ id: number; teamName: string; stage: number; recordedAt: string }>>([]);
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [activeBroadcastMessage, setActiveBroadcastMessage] = useState<string | null>(null);
 
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamPassword, setNewTeamPassword] = useState("");
@@ -16,6 +18,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [stoppingQuest, setStoppingQuest] = useState(false);
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
 
   useEffect(() => {
     if (authed) fetchTeams();
@@ -31,6 +34,7 @@ export default function AdminDashboard() {
       if (data.success) {
         setTeams(data.teams);
         setStageTimes(data.stageTimes ?? []);
+        setActiveBroadcastMessage(data.broadcastMessage ?? null);
       }
     } catch (err) {
       console.error(err);
@@ -169,6 +173,62 @@ export default function AdminDashboard() {
       alert("Failed to stop quest");
     } finally {
       setStoppingQuest(false);
+    }
+  };
+
+  const handleSendBroadcast = async () => {
+    const message = broadcastMessage.trim();
+    if (!message) return;
+
+    setSendingBroadcast(true);
+    try {
+      const res = await fetch("/api/admin/teams", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({ setBroadcastMessage: message }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || "Failed to send message");
+        return;
+      }
+      setActiveBroadcastMessage(data.broadcastMessage ?? message);
+      setBroadcastMessage("");
+      fetchTeams();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send message");
+    } finally {
+      setSendingBroadcast(false);
+    }
+  };
+
+  const handleClearBroadcast = async () => {
+    setSendingBroadcast(true);
+    try {
+      const res = await fetch("/api/admin/teams", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({ clearBroadcastMessage: true }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || "Failed to clear message");
+        return;
+      }
+      setActiveBroadcastMessage(null);
+      fetchTeams();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to clear message");
+    } finally {
+      setSendingBroadcast(false);
     }
   };
 
@@ -328,6 +388,39 @@ export default function AdminDashboard() {
                   {refreshing ? "Refreshing..." : "Refresh"}
                 </button>
               </div>
+            </div>
+
+            <div className="mb-6 border border-gray-900 bg-black/70 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-2">Broadcast To All Teams</p>
+              <div className="flex flex-col md:flex-row gap-2">
+                <input
+                  type="text"
+                  value={broadcastMessage}
+                  onChange={(e) => setBroadcastMessage(e.target.value)}
+                  className="flex-1 bg-gray-900 border border-gray-800 px-3 py-2 text-xs outline-none focus:border-[#D4AF37]"
+                  placeholder="Enter message to all teams..."
+                  maxLength={240}
+                />
+                <button
+                  type="button"
+                  onClick={handleSendBroadcast}
+                  disabled={sendingBroadcast || !broadcastMessage.trim()}
+                  className="border border-[#D4AF37] px-3 py-2 text-[10px] font-bold uppercase text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black disabled:opacity-50"
+                >
+                  Send
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearBroadcast}
+                  disabled={sendingBroadcast || !activeBroadcastMessage}
+                  className="border border-gray-700 px-3 py-2 text-[10px] font-bold uppercase text-gray-300 hover:bg-gray-700 hover:text-white disabled:opacity-50"
+                >
+                  Clear
+                </button>
+              </div>
+              {activeBroadcastMessage && (
+                <p className="mt-2 text-[11px] text-yellow-300">Active: {activeBroadcastMessage}</p>
+              )}
             </div>
             <table className="w-full text-left text-xs">
               <thead>

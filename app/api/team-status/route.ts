@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
     const totalStops = getDefaultStopsForRoute(routeId)?.length ?? 5;
     const isFinished = team.progress >= totalStops || !!team.endTime;
     const wasStoppedByAdmin = !!team.endTime && team.progress < totalStops;
+    const broadcast = await prisma.broadcastMessage.findUnique({ where: { id: 1 } });
 
     let totalTimeText: string | null = null;
     if (team.startTime && team.endTime) {
@@ -39,6 +40,7 @@ export async function GET(req: NextRequest) {
       wasStoppedByAdmin,
       solvedCount: team.progress,
       totalTimeText,
+      broadcastMessage: broadcast?.isActive ? broadcast.message : null,
     });
   } catch (err) {
     console.error(err);

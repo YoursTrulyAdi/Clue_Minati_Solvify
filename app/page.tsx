@@ -37,6 +37,7 @@ export default function LoginPage() {
       localStorage.setItem("totalTimeText", data.totalTimeText ?? "N/A");
       localStorage.setItem("wasStoppedByAdmin", data.wasStoppedByAdmin ? "1" : "0");
       localStorage.setItem("solvedCount", String(data.solvedCount ?? data.progress ?? 0));
+      localStorage.setItem("broadcastMessage", data.broadcastMessage ?? "");
 
       router.push("/app");
     } catch (err: any) {

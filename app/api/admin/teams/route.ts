@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
     const stageTimes = await prisma.teamStageTime.findMany({
       orderBy: [{ recordedAt: "desc" }, { stage: "desc" }],
     });
+    const broadcast = await prisma.broadcastMessage.findUnique({ where: { id: 1 } });
 
     const teamsMap: Record<string, any> = {};
     for (const team of teams) {
@@ -33,7 +34,12 @@ export async function GET(req: NextRequest) {
       };
     }
 
-    return NextResponse.json({ success: true, teams: teamsMap, stageTimes });
+    return NextResponse.json({
+      success: true,
+      teams: teamsMap,
+      stageTimes,
+      broadcastMessage: broadcast?.isActive ? broadcast.message : null,
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ success: false, error: "Failed to fetch teams" }, { status: 500 });
@@ -48,8 +54,43 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { teamName, deleteTeam, resetTeam, password, route, members, addPenalty, resetPenalties, stopQuest } = body;
+    const {
+      teamName,
+      deleteTeam,
+      resetTeam,
+      password,
+      route,
+      members,
+      addPenalty,
+      resetPenalties,
+      stopQuest,
+      setBroadcastMessage,
+      clearBroadcastMessage,
+    } = body;
     const routeId = normalizeRouteId(route);
+
+    if (setBroadcastMessage) {
+      const message = String(setBroadcastMessage).trim();
+      if (!message) {
+        return NextResponse.json({ success: false, error: "Broadcast message cannot be empty" }, { status: 400 });
+      }
+
+      await prisma.broadcastMessage.upsert({
+        where: { id: 1 },
+        update: { message, isActive: true },
+        create: { id: 1, message, isActive: true },
+      });
+
+      return NextResponse.json({ success: true, broadcastMessage: message });
+    }
+
+    if (clearBroadcastMessage) {
+      await prisma.broadcastMessage.updateMany({
+        where: { id: 1 },
+        data: { isActive: false },
+      });
+      return NextResponse.json({ success: true, broadcastMessage: null });
+    }
 
     if (stopQuest) {
       const now = new Date();
