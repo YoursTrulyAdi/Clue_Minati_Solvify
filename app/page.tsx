@@ -28,13 +28,16 @@ export default function LoginPage() {
         throw new Error(data.error || "Login failed");
       }
 
-      // Store in localStorage
-      localStorage.setItem("teamId", data.teamId);
+      // Store team info in localStorage for use in /app
+      localStorage.setItem("teamName", data.teamName);
       localStorage.setItem("route", data.route);
-      localStorage.setItem("progress", data.progress);
-      localStorage.setItem("currentClue", data.firstClue); // 'firstClue' from API
+      localStorage.setItem("progress", String(data.progress));
+      localStorage.setItem("members", JSON.stringify(data.members ?? []));
+      localStorage.setItem("isFinished", data.isFinished ? "1" : "0");
+      localStorage.setItem("totalTimeText", data.totalTimeText ?? "N/A");
+      localStorage.setItem("wasStoppedByAdmin", data.wasStoppedByAdmin ? "1" : "0");
+      localStorage.setItem("solvedCount", String(data.solvedCount ?? data.progress ?? 0));
 
-      // Redirect to main system
       router.push("/app");
     } catch (err: any) {
       setError(err.message);

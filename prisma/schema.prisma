@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../app/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model Team {
+  name          String    @id @unique
+  password      String
+  route         String
+  members       Json
+  progress      Int       @default(0)
+  penalties     Int       @default(0)
+  usedQuestions Int[]     // IDs of questions already served to this team
+  startTime     DateTime?
+  endTime       DateTime?
+  stageTimes    TeamStageTime[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Route {
+  id    String   @id
+  stops String[]
+}
+
+model Question {
+  id       Int    @id @default(autoincrement())
+  question String
+  answer   String
+}
+
+model TargetClue {
+  id             Int     @id @default(autoincrement())
+  clueText       String
+  mappedLocation String  @unique
+}
+
+model TeamStageTime {
+  id         Int      @id @default(autoincrement())
+  teamName   String
+  stage      Int
+  recordedAt DateTime @default(now())
+  team       Team     @relation(fields: [teamName], references: [name], onDelete: Cascade)
+
+  @@unique([teamName, stage])
+  @@index([recordedAt])
+}
+
