@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       clueText: clue.clueText,
-      resourceUrl: clue.resourceUrl,
       mappedLocation: clue.mappedLocation,
     });
   } catch (err) {
