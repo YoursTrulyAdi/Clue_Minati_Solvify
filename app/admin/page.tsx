@@ -45,7 +45,7 @@ export default function AdminDashboard() {
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "kingisback") setAuthed(true);
+    if (password === "admin") setAuthed(true);
     else alert("Incorrect admin password.");
   };
 
